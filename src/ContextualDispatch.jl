@@ -1,28 +1,35 @@
 module ContextualDispatch
 
+using MacroTools: @capture, postwalk, unblock, rmlines
 using Mixtape
+import Mixtape: allow, 
+                transform, 
+                preopt!, 
+                postopt!, 
+                show_after_inference, 
+                show_after_optimization, 
+                debug, 
+                CompilationContext, 
+                @load_call_interface
 using CodeInfoTools
 
 # Controls when the transform on lowered code applies. 
 # I don't want to apply the recursive transform in type inference.
 # So when stacklevel > 1, don't apply.
 # I'll just dispatch to `Mixtape.call` at runtime.
-@ctx (false, false, false) mutable struct Mix 
+mutable struct Mix{T} <: CompilationContext
     stacklevel::Int
+    ctx::T
 end
-Mix() = Mix(1)
-
-# Allow the transform on our Target module.
-allow(ctx::Mix, m::Module, fn, args...) = m == Target
+Mix(ctx::T) where T = Mix(1, ctx)
+Mix{T}() where T = Mix(1, T())
 
 # Basically == a Cassette context.
-struct Context
-    d::Dict
-    Context() = new(Dict())
-end
+abstract type Context end
 
 # Our version of overdub.
 overdub(::Context, f, args...) = f(args...)
+allow(::Mix, m::Module, args...) = true
 
 # The transform inserts state, then wraps calls in (overdub).
 # Then, anytime there's a return value --
@@ -35,10 +42,10 @@ function swap(r, e::Expr)
     return Expr(:call, overdub, r, e.args[1:end]...)
 end
 
-function transform(mix::Mix, src)
+function transform(mix::Mix{T}, src) where T
     b = CodeInfoTools.Builder(src)
-    mix.stacklevel == 1 || return
-    q = push!(b, Expr(:call, Context))
+    mix.stacklevel == 1 || return src
+    q = push!(b, Expr(:call, T))
     rets = Any[]
     for (v, st) in b
         b[v] = swap(q, st)
@@ -52,15 +59,14 @@ function transform(mix::Mix, src)
     return CodeInfoTools.finish(b)
 end
 
-# Optimize decrements the stacklevel. 
-# This honestly doesn't really matter, but it is good form.
-function postopt!(mix::Mix, ir)
-    mix.stacklevel -= 1
-    return ir
+macro load()
+    expr = quote
+        ContextualDispatch.@load_call_interface()
+        call(ctx::T, fn, args...) where T <: Context = call(Mix(ctx), fn, args...)
+    end
+    esc(expr)
 end
 
-Mixtape.@load_call_interface()
-
-export call, overdub
+export overdub, Context, @load, Mix
 
 end # module
