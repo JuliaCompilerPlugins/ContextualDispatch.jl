@@ -2,3 +2,7 @@ name = "ContextualDispatch"
 uuid = "2f1608ad-0c3f-4f8a-8ccc-8bf1ab89ba10"
 authors = ["McCoy Becker <mccoybecker@gmail.com>"]
 version = "0.1.0"
+
+[deps]
+CodeInfoTools = "bc773b8a-8374-437a-b9f2-0e9785855863"
+Mixtape = "17c23775-69b5-4366-8053-0c64bad4914c"
