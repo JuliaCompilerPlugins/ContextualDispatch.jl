@@ -1,0 +1,4 @@
+name = "ContextualDispatch"
+uuid = "2f1608ad-0c3f-4f8a-8ccc-8bf1ab89ba10"
+authors = ["McCoy Becker <mccoybecker@gmail.com>"]
+version = "0.1.0"
