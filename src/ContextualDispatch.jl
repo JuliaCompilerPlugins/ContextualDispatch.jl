@@ -61,18 +61,18 @@ function transform(mix::Mix{T}, src) where T
         b[n] = Core.ReturnNode(v)
     end
     mix.stacklevel += 1
-    display(b)
     return CodeInfoTools.finish(b)
 end
 
-macro load()
+macro jarrett()
     expr = quote
+        using Mixtape
         ContextualDispatch.@load_call_interface()
         call(ctx::T, fn, args...) where T <: Context = call(Mix(ctx), fn, args...)
     end
     esc(expr)
 end
 
-export overdub, Context, @load, Mix
+export overdub, Context, @jarrett, Mix
 
 end # module
