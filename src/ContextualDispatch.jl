@@ -38,8 +38,12 @@ allow(::Mix, m::Module, args...) = true
 # Consider monadic lifting f: R -> R => trans => R -> (R, state).
 swap(r, e) = e
 function swap(r, e::Expr)
-    e.head == :call || return e
-    return Expr(:call, overdub, r, e.args[1:end]...)
+    if e.head == :(=)
+        return Expr(:(=), e.args[1], swap(r, e.args[2]))
+    elseif e.head == :call
+        return Expr(:call, overdub, r, e.args[1:end]...)
+    end
+    return e
 end
 
 function transform(mix::Mix{T}, src) where T
@@ -56,6 +60,7 @@ function transform(mix::Mix{T}, src) where T
         b[n] = Core.ReturnNode(v)
     end
     mix.stacklevel += 1
+    display(b)
     return CodeInfoTools.finish(b)
 end
 
