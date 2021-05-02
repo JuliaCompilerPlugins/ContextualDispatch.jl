@@ -46,6 +46,7 @@ function swap(r, e::Expr)
     return e
 end
 
+# Potentially can be sped up. Profile.
 function transform(mix::Mix{T}, src) where T
     b = CodeInfoTools.Builder(src)
     mix.stacklevel == 1 || return src
