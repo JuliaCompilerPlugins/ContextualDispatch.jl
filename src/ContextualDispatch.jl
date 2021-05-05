@@ -3,14 +3,10 @@ module ContextualDispatch
 using MacroTools: @capture, postwalk, unblock, rmlines
 using Mixtape
 import Mixtape: allow, 
-                transform, 
-                preopt!, 
-                postopt!, 
-                show_after_inference, 
-                show_after_optimization, 
-                debug, 
+                transform,
+                optimize!,
                 CompilationContext, 
-                @load_call_interface
+                @load_abi
 using CodeInfoTools
 
 # Controls when the transform on lowered code applies. 
@@ -67,8 +63,8 @@ end
 macro jarrett()
     expr = quote
         using Mixtape
-        ContextualDispatch.@load_call_interface()
-        call(ctx::T, fn, args...) where T <: Context = call(Mix(ctx), fn, args...)
+        ContextualDispatch.@load_abi()
+        call(ctx::T, fn, args...) where T <: Context = call(fn, args...; ctx = Mix(ctx))
     end
     esc(expr)
 end
