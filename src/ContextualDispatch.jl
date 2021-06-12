@@ -6,7 +6,8 @@ import Mixtape: allow,
                 transform,
                 optimize!,
                 CompilationContext, 
-                @load_abi
+                @load_abi,
+                jit
 using CodeInfoTools
 
 # Controls when the transform on lowered code applies. 
@@ -42,10 +43,14 @@ function swap(r, e::Expr)
     return e
 end
 
+prehook!(mix::Mix{T}, b, sig) where T = b
+posthook!(mix::Mix{T}, b, sig) where T = b
+
 # Potentially can be sped up. Profile.
-function transform(mix::Mix{T}, src) where T
+function transform(mix::Mix{T}, src, sig) where T
     b = CodeInfoTools.Builder(src)
     mix.stacklevel == 1 || return src
+    prehook!(mix, b, sig)
     q = push!(b, Expr(:call, T))
     rets = Any[]
     for (v, st) in b
@@ -56,6 +61,7 @@ function transform(mix::Mix{T}, src) where T
         v = insert!(b, n, Expr(:call, Base.tuple, ret.val, q))
         b[n] = Core.ReturnNode(v)
     end
+    posthook!(mix, b, sig)
     mix.stacklevel += 1
     return CodeInfoTools.finish(b)
 end
@@ -69,6 +75,7 @@ macro jarrett()
     esc(expr)
 end
 
-export overdub, Context, @jarrett, Mix
+export overdub, Context, @jarrett, 
+       Mix, jit, prehook!, posthook!
 
 end # module
