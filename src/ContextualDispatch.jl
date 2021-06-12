@@ -43,14 +43,14 @@ function swap(r, e::Expr)
     return e
 end
 
-prehook!(mix::Mix{T}, b, sig) where T = b
-posthook!(mix::Mix{T}, b, sig) where T = b
+prehook!(ctx::Context, b, sig) = b
+posthook!(ctx::Context, b, sig) = b
 
 # Potentially can be sped up. Profile.
 function transform(mix::Mix{T}, src, sig) where T
     b = CodeInfoTools.Builder(src)
     mix.stacklevel == 1 || return src
-    prehook!(mix, b, sig)
+    prehook!(mix.ctx, b, sig)
     q = push!(b, Expr(:call, T))
     rets = Any[]
     for (v, st) in b
@@ -61,7 +61,7 @@ function transform(mix::Mix{T}, src, sig) where T
         v = insert!(b, n, Expr(:call, Base.tuple, ret.val, q))
         b[n] = Core.ReturnNode(v)
     end
-    posthook!(mix, b, sig)
+    posthook!(mix.ctx, b, sig)
     mix.stacklevel += 1
     return CodeInfoTools.finish(b)
 end
