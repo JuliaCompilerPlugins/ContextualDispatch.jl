@@ -3,17 +3,22 @@ module Simple
 using ContextualDispatch
 import ContextualDispatch: Context, overdub
 
-foo(x, y) = x + y
+foo(x, y) = begin
+    q = 10 + 15
+    x + y + 10 + q
+end
 
-struct SimpleCtx <: Context end
+mutable struct SimpleCtx <: Context 
+    call_num::Int
+    SimpleCtx() = new(0)
+end
 function overdub(ctx::SimpleCtx, ::typeof(+), args...)
+    ctx.call_num += 1
     ret = *(args...)
     ret
 end
 
-# In reference to:
-# https://github.com/google/jax/issues/3359#issuecomment-644541370
-ContextualDispatch.@jarrett()
+ContextualDispatch.@load_call()
 
 r, c = call(SimpleCtx(), foo, 5, 10)
 display((r, c))

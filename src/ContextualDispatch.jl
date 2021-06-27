@@ -71,7 +71,7 @@ function transform(mix::Mix{T}, src, sig) where T
     return new
 end
 
-macro jarrett()
+macro load_call()
     expr = quote
         using Mixtape
         ContextualDispatch.@load_abi()
@@ -80,7 +80,7 @@ macro jarrett()
     esc(expr)
 end
 
-export overdub, Context, @jarrett, 
+export overdub, Context, @load_call, 
        Mix, jit, prehook!, posthook!
 
 end # module
