@@ -8,20 +8,25 @@ module Simple
 using ContextualDispatch
 import ContextualDispatch: Context, overdub
 
-foo(x, y) = x + y
+foo(x, y) = begin
+    q = 10 + 15
+    x + y + 10 + q
+end
 
-struct SimpleCtx <: Context end
+mutable struct SimpleCtx <: Context 
+    call_num::Int
+    SimpleCtx() = new(0)
+end
 function overdub(ctx::SimpleCtx, ::typeof(+), args...)
+    ctx.call_num += 1
     ret = *(args...)
     ret
 end
 
-ContextualDispatch.@jarrett()
+ContextualDispatch.@load_call()
 
 r, c = call(SimpleCtx(), foo, 5, 10)
 display((r, c))
 
 end # module
 ```
-
-> For historical reasons, using a completely different compilation pipeline (which may as well be inter-planetary for all we care), is called "doing a jarrett".
